@@ -1,0 +1,36 @@
+{
+  "name": "explore",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --webpack",
+    "build": "next build --webpack",
+    "start": "next start",
+    "db:push": "prisma db push",
+    "e2e": "node scripts/e2e.mjs",
+    "e2e:deep": "node scripts/seed-e2e.mjs && node scripts/e2e-deep.mjs",
+    "postinstall": "prisma generate && node scripts/patch-exfat.mjs"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.115.0",
+    "@dagrejs/dagre": "^3.0.0",
+    "@prisma/client": "^6.19.3",
+    "@xyflow/react": "^12.11.2",
+    "next": "^16.2.12",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "react-force-graph-3d": "^1.29.1",
+    "react-markdown": "^10.1.0",
+    "react-pdf": "^9.2.1",
+    "remark-gfm": "^4.0.1",
+    "three": "^0.185.1"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.1",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "playwright": "^1.62.0",
+    "prisma": "^6.19.3",
+    "typescript": "^5.9.3"
+  }
+}

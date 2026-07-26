@@ -1,0 +1,85 @@
+// M1-M3 用 SQLite 零配置起步;切 Postgres 时改 provider + url,
+// 并把 Json/向量字段换回原生类型(见 ../03-数据模型与API.md)。
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Tree {
+  id         String    @id @default(uuid())
+  title      String
+  documentId String?
+  document   Document? @relation(fields: [documentId], references: [id])
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  cards      Card[]
+}
+
+model Card {
+  id             String   @id @default(uuid())
+  treeId         String
+  tree           Tree     @relation(fields: [treeId], references: [id], onDelete: Cascade)
+  parentId       String?
+  parent         Card?    @relation("CardChildren", fields: [parentId], references: [id], onDelete: Cascade)
+  children       Card[]   @relation("CardChildren")
+  cardType       String // root | child | related | branch
+  sourceTerm     String?
+  quoteText      String? // 文献划词提问时的原文引文
+  title          String
+  contentMd      String?
+  termsJson      String   @default("[]") // [{term, preview}]
+  pathJson       String   @default("[]") // 祖先标题数组(面包屑)
+  depth          Int      @default(0)
+  status         String   @default("generating") // generating | done | error | refused
+  ancestorDigest String? // 祖先链摘要,供其子卡片生成时使用
+  internalized   Boolean  @default(false) // 已通过评审进入思维宇宙
+  collapsed      Boolean  @default(false) // 子树折叠状态
+  usageJson      String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @default(now()) @updatedAt
+  stars          Star[]
+  reviewAttempts ReviewAttempt[]
+
+  @@index([treeId])
+  @@index([parentId])
+}
+
+model Document {
+  id              String   @id @default(uuid())
+  filename        String
+  localPath       String // uploads/ 下的相对路径
+  anthropicFileId String? // Files API 的 file_id,上传一次复用
+  status          String   @default("ready") // ready | error
+  createdAt       DateTime @default(now())
+  trees           Tree[]
+}
+
+// 思维宇宙:恒星(通过评审的理解)
+model Star {
+  id            String   @id @default(uuid())
+  cardId        String
+  card          Card     @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  concept       String // 卡片标题
+  summary       String // 用户自己的话
+  reviewJson    String // AI 评审结果全量
+  embeddingJson String? // voyage embedding(JSON 数组),无 Key 时为空
+  createdAt     DateTime @default(now())
+
+  @@index([cardId])
+}
+
+model ReviewAttempt {
+  id         String   @id @default(uuid())
+  cardId     String
+  card       Card     @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  summary    String
+  resultJson String
+  passed     Boolean
+  createdAt  DateTime @default(now())
+
+  @@index([cardId])
+}
