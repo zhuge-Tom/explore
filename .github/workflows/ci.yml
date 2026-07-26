@@ -1,0 +1,57 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build-and-e2e:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: explore
+    env:
+      DATABASE_URL: "file:./dev.db"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: explore/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Init database
+        run: npm run db:push
+
+      - name: Build
+        run: npm run build
+
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Start server
+        run: |
+          npm run start &
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:3000 > /dev/null; then
+              echo "server up"; exit 0
+            fi
+            sleep 2
+          done
+          echo "server failed to start"; exit 1
+
+      - name: Deep E2E (19 checks, no API key required)
+        run: npm run e2e:deep
+
+      - name: Upload failure screenshots
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-failure
+          path: explore/scripts/e2e-*.png
+          if-no-files-found: ignore

@@ -6,10 +6,12 @@
 
 *A hierarchical knowledge-exploration agent: click any term you don't understand,<br>and watch your knowledge grow into a tree — powered by Claude.*
 
+[![CI](https://github.com/zhuge-Tom/explore/actions/workflows/ci.yml/badge.svg)](https://github.com/zhuge-Tom/explore/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=next.js)](https://nextjs.org)
 [![Claude](https://img.shields.io/badge/Claude-opus--5-d97757)](https://platform.claude.com)
-[![Tests](https://img.shields.io/badge/E2E-19%20passed-brightgreen)](explore/scripts/e2e-deep.mjs)
+
+[English](README.en.md)
 
 </div>
 
