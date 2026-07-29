@@ -1,7 +1,7 @@
 "use client";
 
 import { memo } from "react";
-import { Handle, Position, type NodeProps, type Node } from "@xyflow/react";
+import { Handle, NodeResizer, Position, type NodeProps, type Node } from "@xyflow/react";
 import ReactMarkdown, { defaultUrlTransform } from "react-markdown";
 import remarkGfm from "remark-gfm";
 
@@ -25,6 +25,7 @@ export type CardNodeData = {
   onToggleCollapse: (cardId: string, collapsed: boolean) => void;
   onDelete: (cardId: string) => void;
   onRegenerate: (cardId: string) => void;
+  onHide: (cardId: string) => void;
   onCiteClick?: (page: number) => void;
 };
 
@@ -39,7 +40,7 @@ const TYPE_BADGE: Record<string, string> = {
   branch: "⑂ 分支",
 };
 
-function CardNodeInner({ data }: NodeProps<CardFlowNode>) {
+function CardNodeInner({ data, selected }: NodeProps<CardFlowNode>) {
   const {
     card,
     childCount,
@@ -52,6 +53,7 @@ function CardNodeInner({ data }: NodeProps<CardFlowNode>) {
     onToggleCollapse,
     onDelete,
     onRegenerate,
+    onHide,
     onCiteClick,
   } = data;
   const generating = card.status === "generating";
@@ -71,6 +73,13 @@ function CardNodeInner({ data }: NodeProps<CardFlowNode>) {
 
   return (
     <div className={`card-node ${card.status}`}>
+      <NodeResizer
+        isVisible={selected}
+        minWidth={360}
+        minHeight={280}
+        lineClassName="card-resize-line"
+        handleClassName="card-resize-handle"
+      />
       <Handle type="target" position={Position.Left} />
       {card.path.length > 0 && (
         <div className="crumb" title={card.path.join(" › ")}>
@@ -84,7 +93,7 @@ function CardNodeInner({ data }: NodeProps<CardFlowNode>) {
         )}
         {card.title}
       </div>
-      <div className="body nodrag nowheel">
+      <div className="body nowheel">
         <ReactMarkdown
           remarkPlugins={[remarkGfm]}
           urlTransform={urlTransform}
@@ -100,7 +109,7 @@ function CardNodeInner({ data }: NodeProps<CardFlowNode>) {
                   qIdx === -1 ? "" : decodeURIComponent(rest.slice(qIdx + 3));
                 return (
                   <button
-                    className="term-link"
+                    className="term-link nodrag"
                     title={preview || "点击深入"}
                     onClick={(e) => {
                       e.stopPropagation();
@@ -115,7 +124,7 @@ function CardNodeInner({ data }: NodeProps<CardFlowNode>) {
                 const page = Number(href.slice("cite://".length));
                 return (
                   <button
-                    className="cite-badge"
+                    className="cite-badge nodrag"
                     title={`跳转到原文第 ${page} 页`}
                     onClick={(e) => {
                       e.stopPropagation();
@@ -127,7 +136,7 @@ function CardNodeInner({ data }: NodeProps<CardFlowNode>) {
                 );
               }
               return (
-                <a href={href} target="_blank" rel="noreferrer">
+                <a className="nodrag" href={href} target="_blank" rel="noreferrer">
                   {children}
                 </a>
               );
@@ -144,13 +153,13 @@ function CardNodeInner({ data }: NodeProps<CardFlowNode>) {
         {card.status === "error" && (
           <>
             <span>生成失败</span>
-            <button className="retry-btn" onClick={() => onRetry(card.id)}>
+            <button className="retry-btn nodrag" onClick={() => onRetry(card.id)}>
               重试
             </button>
           </>
         )}
         {card.status === "done" && (
-          <span className="actions">
+          <span className="actions nodrag">
             <button
               className="action-btn"
               title="用自己的话总结,通过评审后进入思维宇宙"
@@ -188,6 +197,9 @@ function CardNodeInner({ data }: NodeProps<CardFlowNode>) {
             >
               🔄
             </button>
+            <button className="action-btn" title="暂时隐藏这张卡片" onClick={() => onHide(card.id)}>
+              ◌ 隐藏
+            </button>
             {card.cardType !== "root" && (
               <button
                 className="action-btn del"
@@ -214,4 +226,10 @@ function CardNodeInner({ data }: NodeProps<CardFlowNode>) {
   );
 }
 
-export const CardNode = memo(CardNodeInner);
+export const CardNode = memo(CardNodeInner, (prev, next) =>
+  prev.selected === next.selected &&
+  prev.data.card === next.data.card &&
+  prev.data.childCount === next.data.childCount &&
+  prev.data.hiddenDescendants === next.data.hiddenDescendants &&
+  prev.data.onCiteClick === next.data.onCiteClick
+);

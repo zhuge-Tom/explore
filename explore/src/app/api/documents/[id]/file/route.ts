@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { db } from "@/lib/db";
+import { uploadsDir } from "@/lib/paths";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -17,7 +18,7 @@ export async function GET(
     return NextResponse.json({ error: "not found" }, { status: 404 });
   }
   try {
-    const buf = await readFile(path.join(process.cwd(), "uploads", doc.localPath));
+    const buf = await readFile(path.join(uploadsDir(), doc.localPath));
     return new NextResponse(new Uint8Array(buf), {
       headers: {
         "Content-Type": "application/pdf",

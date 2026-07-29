@@ -28,9 +28,9 @@ export default async function TreePage({
           className="header-right"
           title="导出整棵树为 Markdown 学习笔记"
         >
-          📥 导出
+          导出
         </a>
-        <Link href="/universe">🌌 思维宇宙</Link>
+        <Link href="/universe">思维宇宙</Link>
       </header>
       <div className="canvas-wrap">
         <TreeWorkspace tree={toTreeDTO(tree)} />

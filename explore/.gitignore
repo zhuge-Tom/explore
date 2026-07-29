@@ -8,3 +8,9 @@ backups/
 scripts/e2e-*.png
 scripts/e2e-seed.json
 settings.local.json
+settings.json
+data/
+dist/
+desktop-assets/
+desktop-build/
+tsconfig.tsbuildinfo

@@ -4,8 +4,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ReactFlow,
   ReactFlowProvider,
-  Background,
-  Controls,
   MiniMap,
   useReactFlow,
   type Node,
@@ -15,12 +13,12 @@ import {
 import "@xyflow/react/dist/style.css";
 import dagre from "@dagrejs/dagre";
 import type { CardDTO, CardUsage, TreeDTO } from "@/lib/dto";
-import { CardNode, type CardFlowNode } from "./CardNode";
+import { CardNode, type CardFlowNode, type CardNodeData } from "./CardNode";
 import { SummaryModal } from "./SummaryModal";
 import { InputModal } from "./InputModal";
 
-const NODE_W = 380;
-const NODE_H = 420; // 估算高度,仅用于布局
+const NODE_W = 480;
+const NODE_H = 560;
 const FLUSH_MS = 80; // 流式渲染节流窗口
 
 const nodeTypes = { card: CardNode };
@@ -49,6 +47,7 @@ function layout(cards: CardDTO[]): Map<string, { x: number; y: number }> {
 }
 
 type InputMode = { mode: "related" | "branch"; cardId: string };
+type Geometry = { x?: number; y?: number; width?: number; height?: number; hidden?: boolean };
 
 function CanvasInner({
   initialTree,
@@ -62,14 +61,24 @@ function CanvasInner({
   const [cards, setCards] = useState<Record<string, CardDTO>>(() =>
     Object.fromEntries(initialTree.cards.map((c) => [c.id, c])),
   );
-  const [overrides, setOverrides] = useState<
-    Record<string, { x: number; y: number }>
-  >({});
+  const [geometry, setGeometry] = useState<Record<string, Geometry>>({});
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
+  const [showMiniMap, setShowMiniMap] = useState(false);
   const [summaryCardId, setSummaryCardId] = useState<string | null>(null);
   const [inputModal, setInputModal] = useState<InputMode | null>(null);
   const [pendingFocusId, setPendingFocusId] = useState<string | null>(null);
   const opened = useRef(new Set<string>());
-  const { setCenter, fitView } = useReactFlow();
+  const { setCenter, fitView, zoomIn, zoomOut } = useReactFlow();
+
+  const storageKey = `explore:canvas:${initialTree.id}`;
+  useEffect(() => {
+    try { setGeometry(JSON.parse(localStorage.getItem(storageKey) || "{}")); }
+    catch { /* 忽略损坏的本地布局 */ }
+  }, [storageKey]);
+  useEffect(() => {
+    const timer = setTimeout(() => localStorage.setItem(storageKey, JSON.stringify(geometry)), 250);
+    return () => clearTimeout(timer);
+  }, [geometry, storageKey]);
 
   const patchCard = useCallback((id: string, patch: Partial<CardDTO>) => {
     setCards((prev) =>
@@ -200,13 +209,13 @@ function CanvasInner({
     for (const c of all) {
       if (c.collapsed && !hidden.has(c.id)) markHidden(c.id);
     }
-    const visible = all.filter((c) => !hidden.has(c.id));
+    const visible = all.filter((c) => !hidden.has(c.id) && !geometry[c.id]?.hidden);
     const sig = visible
       .map((c) => `${c.id}:${c.parentId ?? ""}:${c.collapsed ? 1 : 0}`)
       .sort()
       .join("|");
     return { visible, byParent, sig };
-  }, [cards]);
+  }, [cards, geometry]);
 
   const posMap = useMemo(
     () => layout(structural.visible),
@@ -216,8 +225,10 @@ function CanvasInner({
   );
 
   const getPos = useCallback(
-    (id: string) => overrides[id] ?? posMap.get(id) ?? { x: 0, y: 0 },
-    [overrides, posMap],
+    (id: string) => geometry[id]?.x !== undefined
+      ? { x: geometry[id].x!, y: geometry[id].y! }
+      : posMap.get(id) ?? { x: 0, y: 0 },
+    [geometry, posMap],
   );
 
   const focusCard = useCallback(
@@ -252,18 +263,37 @@ function CanvasInner({
     return () => window.removeEventListener("keydown", onKey);
   }, [fitView, summaryCardId, inputModal]);
 
-  // 拖拽:位置写入 overrides,布局重算时保留用户手动位置
+  // 只更新发生变化的几何数据；CardNode 的 memo 比较会跳过 Markdown 重渲染。
   const onNodesChange = useCallback((changes: NodeChange[]) => {
-    setOverrides((prev) => {
+    const selections = changes.filter((change): change is Extract<NodeChange, { type: "select" }> => change.type === "select");
+    if (selections.length) {
+      setSelectedIds(prev => {
+        const next = new Set(prev);
+        for (const change of selections) change.selected ? next.add(change.id) : next.delete(change.id);
+        return next;
+      });
+    }
+    setGeometry((prev) => {
       let next: typeof prev | null = null;
       for (const ch of changes) {
         if (ch.type === "position" && ch.position) {
           next = next ?? { ...prev };
-          next[ch.id] = ch.position;
+          next[ch.id] = { ...next[ch.id], x: ch.position.x, y: ch.position.y };
+        }
+        if (ch.type === "dimensions" && ch.dimensions) {
+          next = next ?? { ...prev };
+          next[ch.id] = { ...next[ch.id], width: ch.dimensions.width, height: ch.dimensions.height };
         }
       }
       return next ?? prev;
     });
+  }, []);
+
+  const onHide = useCallback((cardId: string) => {
+    setGeometry(prev => ({ ...prev, [cardId]: { ...prev[cardId], hidden: true } }));
+  }, []);
+  const onRestore = useCallback((cardId: string) => {
+    setGeometry(prev => ({ ...prev, [cardId]: { ...prev[cardId], hidden: false } }));
   }, []);
 
   const createCard = useCallback(
@@ -371,7 +401,7 @@ function CanvasInner({
           Object.entries(prev).filter(([id]) => !removed.has(id)),
         ),
       );
-      setOverrides((prev) =>
+      setGeometry((prev) =>
         Object.fromEntries(
           Object.entries(prev).filter(([id]) => !removed.has(id)),
         ),
@@ -469,9 +499,21 @@ function CanvasInner({
             onToggleCollapse,
             onDelete,
             onRegenerate,
+            onHide,
             onCiteClick,
           },
           draggable: true,
+          selected: selectedIds.has(c.id),
+          style: {
+            width: geometry[c.id]?.width ?? (c.cardType === "root" ? 600 : NODE_W),
+            height: geometry[c.id]?.height ?? (c.cardType === "root" ? 720 : NODE_H),
+          },
+          measured: {
+            width: geometry[c.id]?.width ?? (c.cardType === "root" ? 600 : NODE_W),
+            height: geometry[c.id]?.height ?? (c.cardType === "root" ? 720 : NODE_H),
+          },
+          initialWidth: geometry[c.id]?.width ?? (c.cardType === "root" ? 600 : NODE_W),
+          initialHeight: geometry[c.id]?.height ?? (c.cardType === "root" ? 720 : NODE_H),
         }) satisfies CardFlowNode,
     );
     const visibleIds = new Set(visible.map((c) => c.id));
@@ -500,8 +542,23 @@ function CanvasInner({
     onToggleCollapse,
     onDelete,
     onRegenerate,
+    onHide,
     onCiteClick,
+    geometry,
+    selectedIds,
   ]);
+
+  const initialFocused = useRef(false);
+  useEffect(() => {
+    if (initialFocused.current || nodes.length === 0) return;
+    const root = nodes.find(node => (node.data as CardNodeData).card.cardType === "root") ?? nodes[0];
+    initialFocused.current = true;
+    setTimeout(() => setCenter(
+      root.position.x + ((root.style?.width as number) || NODE_W) / 2,
+      root.position.y + ((root.style?.height as number) || NODE_H) / 2,
+      { zoom: 0.95, duration: 500 },
+    ), 80);
+  }, [nodes, setCenter]);
 
   return (
     <>
@@ -511,21 +568,54 @@ function CanvasInner({
         nodeTypes={nodeTypes}
         onNodesChange={onNodesChange}
         onNodeDoubleClick={(_e, node) => focusCard(node.id)}
-        fitView
-        fitViewOptions={{ maxZoom: 0.85, padding: 0.2 }}
         minZoom={0.1}
+        maxZoom={2}
+        elevateNodesOnSelect={false}
         proOptions={{ hideAttribution: true }}
       >
-        <Background color="#232838" gap={24} />
-        <Controls />
-        <MiniMap
-          pannable
-          zoomable
-          nodeColor="#2b3040"
-          maskColor="rgba(15,17,23,0.7)"
-          style={{ background: "#181b24" }}
-        />
+        {showMiniMap && (
+          <MiniMap
+            pannable
+            zoomable
+            nodeColor="#2b3040"
+            maskColor="rgba(15,17,23,0.7)"
+            style={{ background: "#181b24" }}
+          />
+        )}
       </ReactFlow>
+
+      <div className="canvas-toolbar nodrag" role="toolbar" aria-label="画布视图控制">
+        <button type="button" onClick={() => zoomIn({ duration: 180 })} title="放大画布">
+          <span aria-hidden="true">＋</span> 放大
+        </button>
+        <button type="button" onClick={() => zoomOut({ duration: 180 })} title="缩小画布">
+          <span aria-hidden="true">－</span> 缩小
+        </button>
+        <button
+          type="button"
+          onClick={() => fitView({ duration: 300, maxZoom: 0.9, padding: 0.18 })}
+          title="显示全部卡片"
+        >
+          适应全图
+        </button>
+        <button
+          type="button"
+          onClick={() => setShowMiniMap((visible) => !visible)}
+          aria-pressed={showMiniMap}
+          title={showMiniMap ? "隐藏右下角缩略图" : "显示右下角缩略图"}
+        >
+          {showMiniMap ? "隐藏缩略图" : "显示缩略图"}
+        </button>
+      </div>
+
+      {Object.values(cards).some(card => geometry[card.id]?.hidden) && (
+        <div className="hidden-cards-tray">
+          <span>已隐藏</span>
+          {Object.values(cards).filter(card => geometry[card.id]?.hidden).map(card => (
+            <button key={card.id} onClick={() => onRestore(card.id)} title="恢复卡片">{card.title}</button>
+          ))}
+        </div>
+      )}
 
       {summaryCardId && cards[summaryCardId] && (
         <SummaryModal

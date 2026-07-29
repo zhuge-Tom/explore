@@ -1,11 +1,9 @@
 import Link from "next/link";
 import { db } from "@/lib/db";
 import { todayUsage } from "@/lib/limits";
-import { getSettings } from "@/lib/settings";
 import { NewTreeForm } from "@/components/NewTreeForm";
 import { DocumentForm } from "@/components/DocumentForm";
 import { TreeList } from "@/components/TreeList";
-import { SettingsPanel } from "@/components/SettingsPanel";
 
 export const dynamic = "force-dynamic";
 
@@ -35,14 +33,6 @@ export default async function HomePage() {
           <span className="star-count">{starCount} ★</span>
         </Link>
       </div>
-
-      {!getSettings().anthropicApiKey && (
-        <div className="key-banner">
-          ⚠️ 尚未配置 API Key —— 卡片生成不可用。在下方「⚙️ 设置」中填入即可,保存即时生效。
-        </div>
-      )}
-
-      <SettingsPanel initialOpen={!getSettings().anthropicApiKey} />
 
       <NewTreeForm />
       <DocumentForm />

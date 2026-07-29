@@ -186,7 +186,7 @@ async function generate(card: CardFull, send: Send): Promise<void> {
     card.id,
   );
 
-  const hasDocument = Boolean(card.tree.document?.anthropicFileId);
+  const hasDocument = Boolean(card.tree.document?.textContent);
   const instruction: InstructionInput = {
     cardType: (card.cardType === "root" || !card.parent
       ? "root"
@@ -199,7 +199,7 @@ async function generate(card: CardFull, send: Send): Promise<void> {
     hasDocument,
   };
 
-  const llmStream = streamCard({
+  const llmStream = await streamCard({
     instruction,
     branch: card.parent
       ? {
@@ -208,7 +208,7 @@ async function generate(card: CardFull, send: Send): Promise<void> {
           parentContent: card.parent.contentMd ?? "",
         }
       : undefined,
-    documentFileId: card.tree.document?.anthropicFileId ?? null,
+    documentText: card.tree.document?.textContent ?? null,
   });
 
   llmStream.on("text", (delta) => send("delta", { text: delta }));
@@ -225,9 +225,7 @@ async function generate(card: CardFull, send: Send): Promise<void> {
   }
 
   // 文献树:重组内容并插入 [[page:N]] 引用角标(流式阶段没有角标,done 后前端整体替换)
-  const contentMd = buildContentWithCitations(
-    final.content as { type: string; text?: string; citations?: unknown[] }[],
-  );
+  const contentMd = final.content.trim();
   const terms = parseTerms(contentMd);
 
   await db.card.update({

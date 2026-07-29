@@ -54,6 +54,7 @@ model Document {
   localPath       String // uploads/ 下的相对路径
   anthropicFileId String? // Files API 的 file_id,上传一次复用
   status          String   @default("ready") // ready | error
+  textContent     String?
   createdAt       DateTime @default(now())
   trees           Tree[]
 }

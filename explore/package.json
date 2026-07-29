@@ -2,6 +2,7 @@
   "name": "explore",
   "version": "0.1.0",
   "private": true,
+  "main": "electron/main.cjs",
   "scripts": {
     "dev": "next dev --webpack",
     "build": "next build --webpack",
@@ -9,14 +10,28 @@
     "db:push": "prisma db push",
     "e2e": "node scripts/e2e.mjs",
     "e2e:deep": "node scripts/seed-e2e.mjs && node scripts/e2e-deep.mjs",
-    "postinstall": "prisma generate && node scripts/patch-exfat.mjs"
+    "postinstall": "prisma generate && node scripts/patch-exfat.mjs",
+    "desktop:dev": "electron electron/main.cjs --dev",
+    "desktop:build": "npm run build && node scripts/prepare-desktop.mjs && node scripts/package-windows.mjs"
+  },
+  "build": {
+    "appId": "com.explore.desktop",
+    "productName": "Explore",
+    "asar": false,
+    "directories": { "output": "dist" },
+    "files": ["electron/**/*", ".next/standalone/**/*", ".next/standalone/.next/static/**/*", "package.json"],
+    "extraResources": [{ "from": "desktop-assets/explore-empty.db", "to": "seed/explore.db" }],
+    "win": { "target": [{ "target": "nsis", "arch": ["x64"] }] },
+    "nsis": { "oneClick": false, "allowToChangeInstallationDirectory": true, "createDesktopShortcut": true, "createStartMenuShortcut": true, "shortcutName": "Explore" }
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.115.0",
     "@dagrejs/dagre": "^3.0.0",
     "@prisma/client": "^6.19.3",
     "@xyflow/react": "^12.11.2",
+    "keytar": "^7.9.0",
     "next": "^16.2.12",
+    "openai": "^7.1.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-force-graph-3d": "^1.29.1",
@@ -29,8 +44,12 @@
     "@types/node": "^26.1.1",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
+    "concurrently": "^10.0.4",
+    "electron": "^43.2.0",
+    "electron-builder": "^26.15.3",
     "playwright": "^1.62.0",
     "prisma": "^6.19.3",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "wait-on": "^9.1.0"
   }
 }

@@ -45,7 +45,7 @@ export async function checkCardLimits(): Promise<LimitCheck> {
 export function friendlyLLMError(e: unknown): string {
   const msg = e instanceof Error ? e.message : String(e);
   if (/api key|x-api-key|authentication|401/i.test(msg)) {
-    return "未配置 API Key:请在 explore/.env 中填入 ANTHROPIC_API_KEY 后重启服务";
+    return "当前模型渠道尚未配置或 API Key 无效，请打开右上角设置检查配置";
   }
   if (/rate.?limit|429/i.test(msg)) {
     return "触发速率限制,稍等片刻后重试";
@@ -88,10 +88,8 @@ export async function todayUsage() {
     }
   }
   const totalInput = input + cacheRead + cacheWrite;
-  // claude-opus-5:$5/M 输入、$25/M 输出;缓存读 0.1x、缓存写 1.25x
-  const costUSD =
-    (input * 5 + cacheWrite * 5 * 1.25 + cacheRead * 5 * 0.1) / 1_000_000 +
-    (output * 25) / 1_000_000;
+  // 不同渠道价格不同，仅展示 token；费用由服务商控制台为准。
+  const costUSD = 0;
   return {
     cards: cards.length,
     totalInput,

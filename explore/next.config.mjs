@@ -1,6 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  serverExternalPackages: ["@prisma/client"],
+  output: "standalone",
+  serverExternalPackages: ["@prisma/client", "keytar"],
   // G: 盘为 exFAT:readlink 会返回异常错误码,关闭符号链接解析绕过
   webpack: (config) => {
     config.resolve.symlinks = false;

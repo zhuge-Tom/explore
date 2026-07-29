@@ -1,4 +1,7 @@
 import { PrismaClient } from "@prisma/client";
+import { databasePath } from "./paths";
+
+process.env.DATABASE_URL ||= `file:${databasePath().replaceAll("\\", "/")}`;
 
 const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
 
