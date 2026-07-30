@@ -89,6 +89,7 @@ button.primary:disabled {
   gap: 10px;
 }
 .tree-list li {
+  position: relative;
   display: flex;
   align-items: stretch;
   justify-content: space-between;
@@ -979,20 +980,21 @@ button.primary:disabled {
 }
 .tree-delete-button {
   flex: 0 0 auto;
-  border: 1px solid rgba(248, 113, 113, .36);
-  border-radius: 8px;
-  background: rgba(127, 29, 29, .18);
-  color: #fca5a5;
+  height: 19.2px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--text-dim);
   cursor: pointer;
-  padding: 6px 11px;
+  padding: 0;
   font: inherit;
-  font-size: 13px;
-  transition: border-color .16s ease, background .16s ease, color .16s ease;
+  font-size: 14px;
+  line-height: 19.2px;
+  transition: opacity .16s ease, color .16s ease, background .16s ease, transform .16s ease;
 }
 .tree-delete-button:hover:not(:disabled) {
-  border-color: #f87171;
-  background: rgba(185, 28, 28, .28);
-  color: #fee2e2;
+  background: rgba(110, 168, 254, .12);
+  color: #a9c8f5;
 }
 .tree-delete-button:disabled {
   cursor: wait;
@@ -1000,7 +1002,19 @@ button.primary:disabled {
 }
 .tree-delete-button.compact {
   align-self: center;
-  margin-right: 2px;
+  min-width: 42px;
+  color: #7f91b3;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateX(4px);
+}
+.tree-list li:hover .tree-delete-button.compact,
+.tree-list li:focus-within .tree-delete-button.compact {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translateX(0);
 }
 .usage-dashboard {
   color: var(--text-dim);
@@ -1045,7 +1059,7 @@ button.primary:disabled {
 .global-settings-button > span {
   position: absolute;
   left: 50%;
-  bottom: 8px;
+  bottom: 7.6px;
   transform: translateX(-50%);
   height: 17px;
   font-size: 18px;
