@@ -235,10 +235,10 @@ button.primary:disabled {
   width: 18px !important;
   height: 18px !important;
   z-index: 8 !important;
-  border: 2px solid #b7d7ff !important;
-  background: #4d8fe8 !important;
-  border-radius: 5px !important;
-  box-shadow: 0 0 0 2px #0b1020, 0 0 12px rgba(91, 156, 255, .9) !important;
+  border: 0 !important;
+  background: transparent !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
 }
 .card-resize-handle.top { top: 10px !important; }
 .card-resize-handle.bottom { bottom: 10px !important; }
