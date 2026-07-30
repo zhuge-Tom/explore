@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   ReactFlow,
   ReactFlowProvider,
@@ -67,6 +68,7 @@ function CanvasInner({
   const [summaryCardId, setSummaryCardId] = useState<string | null>(null);
   const [inputModal, setInputModal] = useState<InputMode | null>(null);
   const [pendingFocusId, setPendingFocusId] = useState<string | null>(null);
+  const router = useRouter();
   const opened = useRef(new Set<string>());
   const { setCenter, fitView, zoomIn, zoomOut } = useReactFlow();
 
@@ -410,6 +412,22 @@ function CanvasInner({
     [cards, structural.byParent],
   );
 
+  const onDeleteTree = useCallback(async () => {
+    const confirmed = window.confirm(
+      `确定删除「${initialTree.title}」吗？\n\n这个问题下的全部卡片、总结、评审和恒星都会永久删除。`,
+    );
+    if (!confirmed) return;
+    const response = await fetch(`/api/trees/${initialTree.id}`, { method: "DELETE" });
+    if (!response.ok) {
+      const result = (await response.json().catch(() => null)) as { error?: string } | null;
+      alert(result?.error ?? "删除失败，请重试");
+      return;
+    }
+    localStorage.removeItem(storageKey);
+    router.replace("/");
+    router.refresh();
+  }, [initialTree.id, initialTree.title, router, storageKey]);
+
   const onRetry = useCallback(
     (cardId: string) => {
       patchCard(cardId, { status: "generating", content: "" });
@@ -498,6 +516,7 @@ function CanvasInner({
             onBranch,
             onToggleCollapse,
             onDelete,
+            onDeleteTree,
             onRegenerate,
             onHide,
             onCiteClick,
@@ -541,6 +560,7 @@ function CanvasInner({
     onBranch,
     onToggleCollapse,
     onDelete,
+    onDeleteTree,
     onRegenerate,
     onHide,
     onCiteClick,

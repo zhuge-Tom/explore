@@ -24,6 +24,7 @@ export type CardNodeData = {
   onBranch: (cardId: string) => void;
   onToggleCollapse: (cardId: string, collapsed: boolean) => void;
   onDelete: (cardId: string) => void;
+  onDeleteTree: () => void;
   onRegenerate: (cardId: string) => void;
   onHide: (cardId: string) => void;
   onCiteClick?: (page: number) => void;
@@ -52,6 +53,7 @@ function CardNodeInner({ data, selected }: NodeProps<CardFlowNode>) {
     onBranch,
     onToggleCollapse,
     onDelete,
+    onDeleteTree,
     onRegenerate,
     onHide,
     onCiteClick,
@@ -78,6 +80,14 @@ function CardNodeInner({ data, selected }: NodeProps<CardFlowNode>) {
         minWidth={360}
         minHeight={280}
         lineClassName="card-resize-line"
+        handleClassName="card-resize-handle-hidden"
+      />
+      <NodeResizer
+        isVisible={selected}
+        minWidth={360}
+        minHeight={280}
+        keepAspectRatio
+        lineClassName="card-resize-line-hidden"
         handleClassName="card-resize-handle"
       />
       <Handle type="target" position={Position.Left} />
@@ -206,7 +216,15 @@ function CardNodeInner({ data, selected }: NodeProps<CardFlowNode>) {
             <button className="action-btn" title="暂时隐藏这张卡片" onClick={() => onHide(card.id)}>
               ◌ 隐藏
             </button>
-            {card.cardType !== "root" && (
+            {card.cardType === "root" ? (
+              <button
+                className="action-btn del"
+                title="删除这个问题及其全部卡片"
+                onClick={onDeleteTree}
+              >
+                删除问题
+              </button>
+            ) : (
               <button
                 className="action-btn del"
                 title="删除此卡片及其子树"
