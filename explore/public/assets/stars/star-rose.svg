@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="玫红新星">
+  <defs>
+    <radialGradient id="r" cx="46%" cy="43%"><stop offset="0" stop-color="#fff"/><stop offset=".18" stop-color="#ffe8f7"/><stop offset=".43" stop-color="#ff7dcf"/><stop offset=".7" stop-color="#ee3b83"/><stop offset="1" stop-color="#991b65" stop-opacity="0"/></radialGradient>
+    <filter id="rg" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="6"/></filter>
+  </defs>
+  <circle cx="64" cy="64" r="39" fill="#ff4db2" opacity=".35" filter="url(#rg)"/>
+  <g fill="none" stroke-linecap="round"><path d="M19 75c16-31 65-44 91-17" stroke="#ff9ddc" stroke-width="4" opacity=".5"/><path d="M23 86c23 15 65 5 82-20" stroke="#ff5fb7" stroke-width="2.5" opacity=".44"/></g>
+  <path d="M64 5 69 49 104 28 79 54 123 64 79 70 103 102 69 79 64 123 59 79 28 103 50 70 5 64 50 58 26 29 59 49Z" fill="#ffd5ef" opacity=".58"/>
+  <circle cx="64" cy="64" r="34" fill="url(#r)"/>
+  <circle cx="64" cy="64" r="10" fill="#fff"/>
+</svg>

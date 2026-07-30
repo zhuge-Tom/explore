@@ -25,11 +25,11 @@ export default async function HomePage() {
     <main className="home">
       <div className="home-head">
         <div>
-          <h1>Explore 🌲</h1>
-          <p className="tagline">哪里不懂点哪里 —— 让知识长成一棵树</p>
+          <h1>Explore</h1>
+          <p className="tagline">让知识长成一棵树</p>
         </div>
         <Link href="/universe" className="universe-link">
-          🌌 思维宇宙
+          思维宇宙
           <span className="star-count">{starCount} ★</span>
         </Link>
       </div>

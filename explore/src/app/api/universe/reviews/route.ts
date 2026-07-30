@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { reviewSummary, embed } from "@/lib/llm/gateway";
+import { MIN_REVIEW_SUMMARY_LENGTH } from "@/lib/review";
 
 export const dynamic = "force-dynamic";
 
@@ -17,9 +18,9 @@ export async function POST(req: Request) {
       { status: 400 },
     );
   }
-  if (text.length < 20) {
+  if (text.length < MIN_REVIEW_SUMMARY_LENGTH) {
     return NextResponse.json(
-      { error: "总结太短了,至少写 20 个字" },
+      { error: `总结太短了，至少写 ${MIN_REVIEW_SUMMARY_LENGTH} 个字` },
       { status: 400 },
     );
   }

@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="蓝白极光恒星">
+  <defs>
+    <radialGradient id="a" cx="43%" cy="38%">
+      <stop offset="0" stop-color="#fff"/><stop offset=".18" stop-color="#dff8ff"/><stop offset=".46" stop-color="#55d9ff"/><stop offset=".72" stop-color="#3679ff"/><stop offset="1" stop-color="#2442bd" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="g" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="5.5"/></filter>
+  </defs>
+  <circle cx="64" cy="64" r="38" fill="#45a7ff" opacity=".34" filter="url(#g)"/>
+  <g stroke="#b7efff" stroke-linecap="round" opacity=".82"><path d="M64 5v30M64 93v30M5 64h30M93 64h30" stroke-width="2"/><path d="m23 23 21 21m40 40 21 21m0-82L84 44M44 84l-21 21" stroke-width="1.4"/></g>
+  <circle cx="64" cy="64" r="35" fill="url(#a)"/>
+  <circle cx="64" cy="64" r="12" fill="#fff"/>
+</svg>

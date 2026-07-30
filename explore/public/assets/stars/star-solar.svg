@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="金色太阳恒星">
+  <defs>
+    <radialGradient id="s"><stop offset="0" stop-color="#fffde0"/><stop offset=".22" stop-color="#fff4a1"/><stop offset=".55" stop-color="#ffc43d"/><stop offset=".82" stop-color="#ff7a1a"/><stop offset="1" stop-color="#ef3d16" stop-opacity="0"/></radialGradient>
+    <filter id="b" x="-70%" y="-70%" width="240%" height="240%"><feGaussianBlur stdDeviation="7"/></filter>
+  </defs>
+  <circle cx="64" cy="64" r="40" fill="#ff9a21" opacity=".38" filter="url(#b)"/>
+  <g fill="#ffd66b" opacity=".82"><path d="M64 3 69 30 64 38 59 30Z"/><path d="m107 21-15 23-9 2 1-9Z"/><path d="m125 64-27 5-8-5 8-5Z"/><path d="m107 107-23-15-2-9 9 1Z"/><path d="m64 125-5-27 5-8 5 8Z"/><path d="M21 107 36 84l9-2-1 9Z"/><path d="M3 64 30 59l8 5-8 5Z"/><path d="m21 21 23 15 2 9-9-1Z"/></g>
+  <circle cx="64" cy="64" r="35" fill="url(#s)"/>
+  <path d="M43 62c7-18 31-23 44-7-12-7-28-3-35 10-4 8-1 17 4 23-13-5-19-16-13-26Z" fill="#fff6c7" opacity=".48"/>
+</svg>

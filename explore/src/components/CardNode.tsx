@@ -94,10 +94,15 @@ function CardNodeInner({ data, selected }: NodeProps<CardFlowNode>) {
         {card.title}
       </div>
       <div className="body nowheel">
-        <ReactMarkdown
-          remarkPlugins={[remarkGfm]}
-          urlTransform={urlTransform}
-          components={{
+        <div
+          className="card-markdown nodrag"
+          onPointerDown={(event) => event.stopPropagation()}
+          onMouseDown={(event) => event.stopPropagation()}
+        >
+          <ReactMarkdown
+            remarkPlugins={[remarkGfm]}
+            urlTransform={urlTransform}
+            components={{
             a: ({ href, children }) => {
               if (href?.startsWith("term://")) {
                 const rest = href.slice("term://".length);
@@ -141,11 +146,12 @@ function CardNodeInner({ data, selected }: NodeProps<CardFlowNode>) {
                 </a>
               );
             },
-          }}
-        >
-          {md}
-        </ReactMarkdown>
-        {generating && <span className="cursor-blink" />}
+            }}
+          >
+            {md}
+          </ReactMarkdown>
+          {generating && <span className="cursor-blink" />}
+        </div>
       </div>
       <div className="status-line">
         {generating && <span>✨ 生成中…</span>}

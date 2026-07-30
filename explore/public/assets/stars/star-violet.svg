@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="紫罗兰脉冲恒星">
+  <defs>
+    <radialGradient id="v"><stop offset="0" stop-color="#fff"/><stop offset=".16" stop-color="#f9e8ff"/><stop offset=".42" stop-color="#d276ff"/><stop offset=".7" stop-color="#7a46ee"/><stop offset="1" stop-color="#35158c" stop-opacity="0"/></radialGradient>
+    <filter id="vg" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="6"/></filter>
+  </defs>
+  <ellipse cx="64" cy="64" rx="49" ry="25" fill="none" stroke="#c48cff" stroke-width="3" opacity=".38" transform="rotate(-18 64 64)" filter="url(#vg)"/>
+  <circle cx="64" cy="64" r="39" fill="#994cff" opacity=".34" filter="url(#vg)"/>
+  <path d="M64 4 70 50 124 64 70 70 64 124 58 70 4 64 58 58Z" fill="#e8c5ff" opacity=".72"/>
+  <circle cx="64" cy="64" r="34" fill="url(#v)"/>
+  <circle cx="57" cy="55" r="7" fill="#fff" opacity=".9"/>
+</svg>

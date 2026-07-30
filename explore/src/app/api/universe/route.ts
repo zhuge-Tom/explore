@@ -9,7 +9,17 @@ const SEMANTIC_LINK_THRESHOLD = 0.75;
 // GET /api/universe — 思维宇宙全量图数据(恒星 + 连线)
 export async function GET() {
   const stars = await db.star.findMany({
-    include: { card: { select: { id: true, treeId: true, parentId: true } } },
+    include: {
+      card: {
+        select: {
+          id: true,
+          treeId: true,
+          parentId: true,
+          pathJson: true,
+          tree: { select: { title: true } },
+        },
+      },
+    },
     orderBy: { createdAt: "asc" },
   });
 
@@ -71,6 +81,8 @@ export async function GET() {
       review: JSON.parse(s.reviewJson),
       cardId: s.cardId,
       treeId: s.card.treeId,
+      treeTitle: s.card.tree.title,
+      path: JSON.parse(s.card.pathJson) as string[],
       degree: degree.get(s.id) ?? 0,
       createdAt: s.createdAt.toISOString(),
     })),

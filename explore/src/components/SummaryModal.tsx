@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { ReviewResult } from "@/lib/llm/prompts";
+import { MIN_REVIEW_SUMMARY_LENGTH } from "@/lib/review";
 
 type ReviewResponse = ReviewResult & { starId: string | null; attempts: number };
 
@@ -20,9 +21,10 @@ export function SummaryModal({
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<ReviewResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const summaryLength = summary.trim().length;
 
   async function submit() {
-    if (busy || summary.trim().length < 20) return;
+    if (busy || summaryLength < MIN_REVIEW_SUMMARY_LENGTH) return;
     setBusy(true);
     setError(null);
     try {
@@ -69,12 +71,20 @@ export function SummaryModal({
               placeholder="我理解的是……"
               autoFocus
             />
+            <div className={`review-character-count ${summaryLength < MIN_REVIEW_SUMMARY_LENGTH ? "short" : "ready"}`}>
+              <span>已输入 {summaryLength} 个字</span>
+              <span>
+                {summaryLength < MIN_REVIEW_SUMMARY_LENGTH
+                  ? `至少再写 ${MIN_REVIEW_SUMMARY_LENGTH - summaryLength} 个字即可提交`
+                  : "可以提交评审"}
+              </span>
+            </div>
             {error && <p className="modal-error">{error}</p>}
             <div className="modal-actions">
               <button
                 className="primary"
                 onClick={submit}
-                disabled={busy || summary.trim().length < 20}
+                disabled={busy || summaryLength < MIN_REVIEW_SUMMARY_LENGTH}
               >
                 {busy ? "评审中…" : "提交评审"}
               </button>
