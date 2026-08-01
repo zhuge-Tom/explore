@@ -1,98 +1,78 @@
-<div align="center">
+# Explore
 
-# Explore 🌲
+Explore 是一款 Windows 桌面知识探索工具。输入问题、添加图片或导入 PDF，应用会把内容整理成可继续展开的知识卡片；你可以在无限画布中连接、缩放和整理卡片，并把真正掌握的内容沉淀到思维宇宙。
 
-**哪里不懂点哪里 —— 让知识长成一棵树**
+它不把学习过程压缩成一段聊天记录，而是保留问题、推导、追问和理解之间的关系。
 
-*A hierarchical knowledge-exploration agent: click any term you don't understand,<br>and watch your knowledge grow into a tree — powered by Claude.*
+## 下载与安装
 
-[![CI](https://github.com/zhuge-Tom/explore/actions/workflows/ci.yml/badge.svg)](https://github.com/zhuge-Tom/explore/actions/workflows/ci.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=next.js)](https://nextjs.org)
-[![Claude](https://img.shields.io/badge/Claude-opus--5-d97757)](https://platform.claude.com)
+从 [Releases](https://github.com/zhuge-Tom/explore/releases/latest) 下载 `Explore Setup x.y.z.exe`，双击安装后可从桌面或开始菜单打开。
 
-[English](README.en.md)
+当前版本为 [v0.2.0](https://github.com/zhuge-Tom/explore/releases/tag/v0.2.0)。应用数据保存在 `%APPDATA%\Explore`；卸载或升级不会自动删除已有知识树、PDF 和设置。
 
-</div>
+## 从一个问题开始
 
----
+输入想理解的问题即可开始。也可以添加图片、拖入图片、粘贴截图，或导入带文字层的 PDF 文献。图片和 PDF 都会在本地保存，只有在发起相应提问时才会发送给你配置的模型服务。
 
-## 为什么做这个?
+![Explore 首页：问题、图片和 PDF 输入](explore/docs/images/home.png)
 
-在和 AI 探讨复杂问题(读论文、学生物、研究量子力学)时,你是否经常遇到:
+## 在无限画布中组织知识
 
-> 问了一个问题 ➡️ AI 抛出 10 个不懂的术语 ➡️ 追问其中一个 ➡️ 回答里又有新术语……
-> 聊了三轮之后,你和 AI 都忘了最开始在聊什么 😵‍💫
+每个问题会生成一组知识卡片。卡片可以整体拖动，并从四边或四角调整大小；支持展开术语、对比、追问、折叠、隐藏、重写和删除。画布提供缩放、全图适配和缩略图，方便在复杂主题中保持全局视野。
 
-面对海量知识,我们却还在用半个世纪前的"命令行对话框"交互。**Explore 用「卡片树」替代「聊天流」**:每一次追问都在画布上长出一张新卡片,主线永远清晰可见。
+![知识卡片画布](explore/docs/images/canvas.png)
 
-## ✨ 核心功能
+## 将理解沉淀为恒星
 
-### 层级对话 —— 哪里不懂点哪里
+用自己的话总结一张卡片。通过 AI 评审后，对应知识会成为思维宇宙中的一颗恒星；恒星带有知识点标注，点击即可回看原来的卡片和评审结果。
 
-卡片里看不懂的术语会自动高亮,点击即在旁边展开新卡片。上下文自动继承(祖先链摘要),永远不用复述"我们刚才聊到哪了"。
+![思维宇宙](explore/docs/images/universe.png)
 
-![知识树画布](docs/screenshots/canvas.png)
+## 模型设置
 
-- ↗️ **子卡片**:点击术语,深挖背景知识
-- ↔ **对比卡片**:与易混概念横向辨析(紫色连线)
-- ⑂ **分支追问**:继承上下文,换个角度另起炉灶(虚线连线)
-- 流式生成、自动布局、面包屑路径、同名去重跳转、折叠聚焦、一键导出 Markdown 笔记
+首次启动时，或点击右上角设置按钮，可以分别配置文字对话模型和识图模型。文字对话支持 DeepSeek、Anthropic 以及自定义 OpenAI Chat Completions 兼容服务；识图模型可使用 GLM、Qwen-VL、Ollama、OpenAI、Anthropic 或兼容接口。
 
-### 文献模式 —— 在论文上直接提问
+点击“加载模型”读取当前服务可用模型；点击“保存并测试”确认连接成功后再写入配置。API Key 保存于 Windows 凭据管理器，设置接口不会返回 Key 内容。
 
-导入 PDF 进入双栏模式:左侧读原文,**选中不懂的内容直接提问**;卡片回答自带页码引用角标,点击跳回原文位置。
+## 功能概览
 
-![文献双栏模式](docs/screenshots/pdf-mode.png)
+- 流式生成 Markdown 知识卡片，卡片内文字可选中复制
+- 支持图片提问：选择、拖拽或粘贴 PNG、JPEG、WebP、GIF
+- PDF 本地逐页提取文字，回答使用 `[[page:N]]` 标注引用页码
+- 无限知识画布：拖动、缩放、隐藏、删除、重新生成
+- 思维宇宙：通过评审的理解以可点击恒星展示
+- 星云式深色背景与随机闪烁星点
 
-### 思维宇宙 —— 让理解沉淀下来
+## 本地开发
 
-读懂一张卡片后,**用自己的话总结**。AI 从准确性、完整性、是否用自己的话三个维度评审:通过则成为你 3D 思维宇宙中的一颗恒星;未通过则指出具体偏差(给线索,不给答案)。
+需要 Node.js 22 与 npm。
 
-未来生成新卡片时,AI 会检索你已内化的理解,**用"你自己说过的话"来教你新概念**。
-
-![思维宇宙](docs/screenshots/universe.png)
-
-## 🚀 快速开始
-
-```bash
+```powershell
 git clone https://github.com/zhuge-Tom/explore.git
-cd explore/explore
-npm install          # 自动执行 prisma generate
-npm run db:push      # 初始化 SQLite 数据库(零配置)
-npm run dev          # http://localhost:3000
+cd explore\explore
+npm install
+npm run db:push
+npm run dev
 ```
 
-打开首页,在 **「⚙️ 设置」** 面板中填入你的 [Anthropic API Key](https://platform.claude.com/)(保存即时生效,支持一键测试连接)。Windows 用户也可以直接双击 `explore/start.bat`。
+开发页面默认位于 <http://localhost:3000>。
 
-> 可选:填入 [Voyage AI](https://www.voyageai.com/) Key 可解锁思维宇宙的语义连线与知识锚点教学;不填则自动降级,其余功能不受影响。
+## 构建 Windows 安装包
 
-## 🧠 LLM 工程亮点
+```powershell
+cd explore\explore
+npm ci
+npm run desktop:build
+```
 
-| 设计 | 说明 |
-|---|---|
-| **Prompt 分层缓存** | 系统提示词(1h)→ 文献(1h)→ 分支上下文(5m)→ 指令,沿分支深挖时只为增量付费,卡片底部实时显示缓存命中率 |
-| **祖先链摘要** | 每张卡片异步预压缩学习路径摘要,10 层深的树也是 O(1) 上下文组装 |
-| **正文即协议** | 卡片用 `[[术语\|预览]]` 内联标记,流式渲染与结构化解析兼得 |
-| **结构化评审** | 思维宇宙评审走 `json_schema` 结构化输出,evidence 可解析可落库 |
-| **成本保护** | 每日配额 + 并发限制 + 用量看板(tokens / 缓存命中 / 估算成本) |
-| **稳健性** | refusal 服务端兜底、SSE 断线补齐、失败重试、友好中文报错 |
+安装包输出到 `explore\dist\Explore Setup x.y.z.exe`。桌面版由 Electron 启动本地服务，不需要另开浏览器。
 
-## 📚 文档
+## 隐私与边界
 
-| 文档 | 内容 |
-|---|---|
-| [01-产品设计](01-产品设计.md) | 用户旅程、卡片系统、思维宇宙产品规则 |
-| [02-系统架构](02-系统架构.md) | 技术选型、模块划分、关键链路 |
-| [03-数据模型与API](03-数据模型与API.md) | Schema、REST/SSE 接口定义 |
-| [04-LLM工程设计](04-LLM工程设计.md) | Prompt 设计、缓存策略、评审规范 |
-| [05-MVP路线图](05-MVP路线图.md) | 三阶段迭代计划与验收标准 |
-| [explore/README.md](explore/README.md) | 开发细节:目录结构、测试、已知约束 |
+- 仓库和安装包不包含 API Key、个人数据库或上传文件
+- 扫描型 PDF 暂不提供 OCR；没有文本层时应用会提示更换文件
+- 当前版本不提供云同步、账号系统、多设备共享或自动更新
 
-## 🛠️ 技术栈
-
-Next.js 16 · React Flow · react-pdf · react-force-graph-3d · Prisma + SQLite · [@anthropic-ai/sdk](https://github.com/anthropics/anthropic-sdk-typescript)(`claude-opus-5`)· Voyage AI(可选)· Playwright E2E
-
-## 📄 License
+## License
 
 [MIT](LICENSE) © 2026 zhuge-Tom
