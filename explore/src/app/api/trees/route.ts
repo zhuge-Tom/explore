@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { checkCardLimits } from "@/lib/limits";
+import { encodeImageContext, isImageAttachment, type ImageAttachment } from "@/lib/image-attachments";
 
 export const dynamic = "force-dynamic";
 
@@ -23,13 +24,18 @@ export async function GET() {
 
 // POST /api/trees {question, documentId?} — 新建树 + 根卡片
 export async function POST(req: Request) {
-  const { question, documentId } = (await req.json()) as {
+  const { question, documentId, images } = (await req.json()) as {
     question?: string;
     documentId?: string;
+    images?: unknown[];
   };
   const q = question?.trim();
   if (!q) {
     return NextResponse.json({ error: "question is required" }, { status: 400 });
+  }
+  const validImages = Array.isArray(images) ? images.filter(isImageAttachment) : [];
+  if (validImages.length > 4) {
+    return NextResponse.json({ error: "最多可添加 4 张图片" }, { status: 400 });
   }
 
   const limit = await checkCardLimits();
@@ -61,6 +67,9 @@ export async function POST(req: Request) {
       treeId: tree.id,
       cardType: "root",
       title: q,
+      quoteText: validImages.length
+        ? encodeImageContext({ images: validImages as ImageAttachment[] })
+        : null,
       depth: 0,
       pathJson: "[]",
       status: "generating",

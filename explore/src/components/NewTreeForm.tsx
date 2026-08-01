@@ -2,21 +2,26 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { ImagePicker, type ClientImageAttachment } from "./ImagePicker";
 
 export function NewTreeForm() {
   const router = useRouter();
   const [question, setQuestion] = useState("");
+  const [images, setImages] = useState<ClientImageAttachment[]>([]);
   const [busy, setBusy] = useState(false);
 
   async function submit() {
     const q = question.trim();
-    if (!q || busy) return;
+    if ((!q && images.length === 0) || busy) return;
     setBusy(true);
     try {
       const res = await fetch("/api/trees", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question: q }),
+        body: JSON.stringify({
+          question: q || "请分析这张图片",
+          images: images.map(({ previewUrl: _previewUrl, ...image }) => image),
+        }),
       });
       if (!res.ok) throw new Error(await res.text());
       const { treeId } = (await res.json()) as { treeId: string };
@@ -37,7 +42,8 @@ export function NewTreeForm() {
           if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) submit();
         }}
       />
-      <button className="primary" onClick={submit} disabled={busy || !question.trim()}>
+      <ImagePicker images={images} onChange={setImages} disabled={busy} />
+      <button className="primary" onClick={submit} disabled={busy || (!question.trim() && images.length === 0)}>
         {busy ? "创建中…" : "开始探索"}
       </button>
     </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { ImagePicker, type ClientImageAttachment } from "./ImagePicker";
 
 export function InputModal({
   title,
@@ -14,15 +15,16 @@ export function InputModal({
   hint?: string;
   placeholder: string;
   submitLabel: string;
-  onSubmit: (value: string) => void;
+  onSubmit: (value: string, images: ClientImageAttachment[]) => void;
   onClose: () => void;
 }) {
   const [value, setValue] = useState("");
+  const [images, setImages] = useState<ClientImageAttachment[]>([]);
 
   function submit() {
     const v = value.trim();
-    if (!v) return;
-    onSubmit(v);
+    if (!v && images.length === 0) return;
+    onSubmit(v || "请分析这张图片", images);
     onClose();
   }
 
@@ -47,8 +49,9 @@ export function InputModal({
             if (e.key === "Escape") onClose();
           }}
         />
+        <ImagePicker images={images} onChange={setImages} />
         <div className="modal-actions">
-          <button className="primary" onClick={submit} disabled={!value.trim()}>
+          <button className="primary" onClick={submit} disabled={!value.trim() && images.length === 0}>
             {submitLabel}
           </button>
         </div>

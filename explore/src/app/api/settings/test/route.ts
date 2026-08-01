@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 import { testConnection, ProviderError } from "@/lib/llm/gateway";
-import type { ProviderKind } from "@/lib/settings";
+import type { CredentialScope, ProviderKind } from "@/lib/settings";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 export async function POST(req: Request) {
-  const body = await req.json() as { kind: ProviderKind; baseUrl: string; apiKey?: string; model?: string };
+  const body = await req.json() as { kind: ProviderKind; baseUrl: string; apiKey?: string; model?: string; scope?: CredentialScope };
   try {
     const models = await testConnection(body);
     return NextResponse.json({ ok: true, models });

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { toCardDTO } from "@/lib/dto";
 import { checkCardLimits } from "@/lib/limits";
+import { encodeImageContext, isImageAttachment, type ImageAttachment } from "@/lib/image-attachments";
 
 export const dynamic = "force-dynamic";
 
@@ -14,6 +15,7 @@ interface CreateCardBody {
   term?: string;
   /** 文献划词提问:原文引文 */
   quote?: string;
+  images?: unknown[];
 }
 
 // POST /api/cards — 派生卡片(child 子卡片 / related 关联对比 / branch 分支追问)
@@ -22,12 +24,16 @@ export async function POST(req: Request) {
   const type = body.type ?? "child";
   const subject = body.term?.trim();
   const quote = body.quote?.trim();
+  const images = Array.isArray(body.images) ? body.images.filter(isImageAttachment) : [];
 
   if (!body.parentId || !subject) {
     return NextResponse.json(
       { error: "parentId and term are required" },
       { status: 400 },
     );
+  }
+  if (images.length > 4) {
+    return NextResponse.json({ error: "最多可添加 4 张图片" }, { status: 400 });
   }
 
   const limit = await checkCardLimits();
@@ -71,7 +77,9 @@ export async function POST(req: Request) {
       parentId: parent.id,
       cardType: type,
       sourceTerm: subject,
-      quoteText: quote || null,
+      quoteText: images.length
+        ? encodeImageContext({ quote: quote || undefined, images: images as ImageAttachment[] })
+        : quote || null,
       title,
       depth: parent.depth + 1,
       pathJson: JSON.stringify(path),

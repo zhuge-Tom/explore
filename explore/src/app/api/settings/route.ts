@@ -11,6 +11,10 @@ export async function PUT(req: Request) {
     const body = await req.json() as {
       activeProvider?: ProviderKind;
       provider?: { kind: ProviderKind; baseUrl?: string; model?: string; apiKey?: string; clearApiKey?: boolean };
+      vision?: {
+        activeProvider?: ProviderKind;
+        provider?: { kind: ProviderKind; baseUrl?: string; model?: string; apiKey?: string; clearApiKey?: boolean };
+      };
       dailyCardLimit?: number;
       maxConcurrent?: number;
     };

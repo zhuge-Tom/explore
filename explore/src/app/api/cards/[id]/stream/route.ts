@@ -1,10 +1,14 @@
 import { db } from "@/lib/db";
+import { readFile } from "node:fs/promises";
+import path from "node:path";
 import { toCardUsage } from "@/lib/dto";
+import { decodeImageContext } from "@/lib/image-attachments";
 import { friendlyLLMError } from "@/lib/limits";
-import { streamCard, compressDigest, embed } from "@/lib/llm/gateway";
+import { streamCard, compressDigest, embed, type VisionImage } from "@/lib/llm/gateway";
 import { cosine } from "@/lib/similarity";
 import { parseTerms } from "@/lib/terms";
 import type { InstructionInput } from "@/lib/llm/prompts";
+import { uploadsDir } from "@/lib/paths";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -140,6 +144,20 @@ async function findAnchors(
   }
 }
 
+async function loadVisionImages(value: string | null): Promise<{ quote?: string; images: VisionImage[] }> {
+  const context = decodeImageContext(value);
+  if (!context) return { quote: value ?? undefined, images: [] };
+  try {
+    const images = await Promise.all(context.images.map(async (image) => ({
+      mimeType: image.mimeType,
+      data: (await readFile(path.join(uploadsDir(), image.localPath))).toString("base64"),
+    })));
+    return { quote: context.quote, images };
+  } catch {
+    throw new Error("图片文件已丢失，请重新上传图片后再提问");
+  }
+}
+
 /** 把带 citations 的响应内容重组为 Markdown:引用处追加 [[page:N]] 角标 */
 function buildContentWithCitations(
   content: { type: string; text?: string; citations?: unknown[] }[],
@@ -187,16 +205,18 @@ async function generate(card: CardFull, send: Send): Promise<void> {
   );
 
   const hasDocument = Boolean(card.tree.document?.textContent);
+  const imageContext = await loadVisionImages(card.quoteText);
   const instruction: InstructionInput = {
     cardType: (card.cardType === "root" || !card.parent
       ? "root"
       : card.cardType) as InstructionInput["cardType"],
     subject: card.cardType === "root" ? card.title : (card.sourceTerm ?? card.title),
     parentTitle: card.parent?.title,
-    quote: card.quoteText ?? undefined,
+    quote: imageContext.quote,
     existingTitles,
     anchors,
     hasDocument,
+    hasImages: imageContext.images.length > 0,
   };
 
   const llmStream = await streamCard({
@@ -209,6 +229,7 @@ async function generate(card: CardFull, send: Send): Promise<void> {
         }
       : undefined,
     documentText: card.tree.document?.textContent ?? null,
+    images: imageContext.images,
   });
 
   llmStream.on("text", (delta) => send("delta", { text: delta }));

@@ -80,6 +80,8 @@ export interface InstructionInput {
   anchors?: { concept: string; summary: string }[];
   /** 该树是否关联文献 */
   hasDocument?: boolean;
+  /** 本次提问是否附带图片 */
+  hasImages?: boolean;
 }
 
 export function buildInstruction(input: InstructionInput): string {
@@ -114,6 +116,10 @@ export function buildInstruction(input: InstructionInput): string {
         `用户在读完《${input.parentTitle}》及其学习路径后,想换个角度追问一个新问题(请在已有上下文的基础上回答,不要从零科普):\n\n${input.subject}`,
       );
       break;
+  }
+
+  if (input.hasImages) {
+    parts.push("# 图片提问\n用户附上了图片。请先准确识别图片中的主体、文字、图表或结构，再结合用户的问题回答；图片细节看不清或无法确认时，要明确说明，不要臆测。");
   }
 
   if (input.anchors && input.anchors.length > 0) {

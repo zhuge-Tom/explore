@@ -17,6 +17,7 @@ import type { CardDTO, CardUsage, TreeDTO } from "@/lib/dto";
 import { CardNode, type CardFlowNode, type CardNodeData } from "./CardNode";
 import { SummaryModal } from "./SummaryModal";
 import { InputModal } from "./InputModal";
+import type { ClientImageAttachment } from "./ImagePicker";
 
 const NODE_W = 480;
 const NODE_H = 560;
@@ -304,12 +305,16 @@ function CanvasInner({
       type?: string;
       term: string;
       quote?: string;
+      images?: ClientImageAttachment[];
     }) => {
       try {
         const res = await fetch("/api/cards", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
+          body: JSON.stringify({
+            ...body,
+            images: body.images?.map(({ previewUrl: _previewUrl, ...image }) => image),
+          }),
         });
         if (!res.ok) {
           const err = (await res.json().catch(() => null)) as {
@@ -662,11 +667,12 @@ function CanvasInner({
             inputModal.mode === "related" ? "要对比的概念…" : "你的新问题…"
           }
           submitLabel="生成卡片"
-          onSubmit={(v) =>
+          onSubmit={(v, images) =>
             createCard({
               parentId: inputModal.cardId,
               type: inputModal.mode,
               term: v,
+              images,
             })
           }
           onClose={() => setInputModal(null)}

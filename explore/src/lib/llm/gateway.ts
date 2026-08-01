@@ -1,6 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import OpenAI from "openai";
-import { getApiKey, getSettings, type ProviderKind, type ProviderSettings } from "../settings";
+import { getApiKey, getSettings, type CredentialScope, type ProviderKind, type ProviderSettings } from "../settings";
 import { SYSTEM_PROMPT, DIGEST_PROMPT, REVIEW_SYSTEM, type ReviewResult, buildInstruction, buildBranchContext, type InstructionInput } from "./prompts";
 
 export interface ProviderErrorShape { code: "not_configured"|"authentication"|"permission"|"rate_limit"|"model_unavailable"|"network"|"server"; message: string; }
@@ -16,10 +16,11 @@ function classify(e: unknown): ProviderError {
   return new ProviderError({ code: "server", message: message.slice(0, 180) || "模型服务异常" });
 }
 
-async function active() {
+async function active(scope: CredentialScope = "text") {
   const settings = getSettings();
-  const config = settings.providers[settings.activeProvider];
-  const apiKey = await getApiKey(settings.activeProvider);
+  const activeProvider = scope === "vision" ? settings.vision.activeProvider : settings.activeProvider;
+  const config = (scope === "vision" ? settings.vision.providers : settings.providers)[activeProvider];
+  const apiKey = await getApiKey(activeProvider, scope);
   if (!apiKey) throw new ProviderError({ code: "not_configured", message: "尚未配置当前模型渠道的 API Key" });
   if (!config.model) throw new ProviderError({ code: "model_unavailable", message: "尚未选择模型" });
   return { config, apiKey };
@@ -29,8 +30,8 @@ function openAIClient(config: ProviderSettings, apiKey: string) {
   return new OpenAI({ apiKey, baseURL: config.baseUrl.replace(/\/$/, ""), timeout: 30000, maxRetries: 0 });
 }
 
-export async function listModels(input: { kind: ProviderKind; baseUrl: string; apiKey?: string }): Promise<string[]> {
-  const key = input.apiKey?.trim() || await getApiKey(input.kind);
+export async function listModels(input: { kind: ProviderKind; baseUrl: string; apiKey?: string; scope?: CredentialScope }): Promise<string[]> {
+  const key = input.apiKey?.trim() || await getApiKey(input.kind, input.scope);
   if (!key) throw new ProviderError({ code: "not_configured", message: "请先输入 API Key" });
   try {
     if (input.kind === "anthropic") {
@@ -44,7 +45,7 @@ export async function listModels(input: { kind: ProviderKind; baseUrl: string; a
   } catch (e) { throw classify(e); }
 }
 
-export async function testConnection(input: { kind: ProviderKind; baseUrl: string; apiKey?: string; model?: string }) {
+export async function testConnection(input: { kind: ProviderKind; baseUrl: string; apiKey?: string; model?: string; scope?: CredentialScope }) {
   const models = await listModels(input);
   if (input.model && !models.includes(input.model)) throw new ProviderError({ code: "model_unavailable", message: "所选模型不在当前账号的可用模型列表中" });
   return models;
@@ -59,12 +60,17 @@ class UnifiedStream {
   finalMessage() { return this.run(text => this.listeners.forEach(listener => listener(text))); }
 }
 
-async function streamWithProvider(system: string, user: string): Promise<UnifiedStream> {
-  const { config, apiKey } = await active();
+export interface VisionImage { mimeType: "image/jpeg" | "image/png" | "image/webp" | "image/gif"; data: string; }
+
+async function streamWithProvider(system: string, user: string, images: VisionImage[] = []): Promise<UnifiedStream> {
+  const { config, apiKey } = await active(images.length ? "vision" : "text");
   if (config.kind === "anthropic") {
     return new UnifiedStream(async emit => {
       try {
-        const stream = new Anthropic({ apiKey, baseURL: config.baseUrl || undefined }).messages.stream({ model: config.model, max_tokens: 8000, system, messages: [{ role: "user", content: user }] });
+        const messageContent: Anthropic.MessageParam["content"] = images.length
+          ? [{ type: "text", text: user }, ...images.map(image => ({ type: "image" as const, source: { type: "base64" as const, media_type: image.mimeType, data: image.data } }))]
+          : user;
+        const stream = new Anthropic({ apiKey, baseURL: config.baseUrl || undefined }).messages.stream({ model: config.model, max_tokens: 8000, system, messages: [{ role: "user", content: messageContent }] });
         stream.on("text", emit);
         const final = await stream.finalMessage();
         const content = final.content.filter((b): b is Anthropic.TextBlock => b.type === "text").map(b => b.text).join("");
@@ -74,7 +80,10 @@ async function streamWithProvider(system: string, user: string): Promise<Unified
   }
   return new UnifiedStream(async emit => {
     try {
-      const response = await openAIClient(config, apiKey).chat.completions.create({ model: config.model, max_tokens: 8000, stream: true, stream_options: { include_usage: true }, messages: [{ role: "system", content: system }, { role: "user", content: user }] });
+      const userContent = images.length
+        ? [{ type: "text" as const, text: user }, ...images.map(image => ({ type: "image_url" as const, image_url: { url: `data:${image.mimeType};base64,${image.data}` } }))]
+        : user;
+      const response = await openAIClient(config, apiKey).chat.completions.create({ model: config.model, max_tokens: 8000, stream: true, stream_options: { include_usage: true }, messages: [{ role: "system", content: system }, { role: "user", content: userContent }] });
       let content = ""; let input = 0; let output = 0; let reason: string | null = null;
       for await (const chunk of response) {
         const text = chunk.choices[0]?.delta?.content || "";
@@ -87,13 +96,13 @@ async function streamWithProvider(system: string, user: string): Promise<Unified
   });
 }
 
-export interface StreamCardInput { instruction: InstructionInput; branch?: { ancestorDigest: string | null; parentTitle: string; parentContent: string; }; documentText?: string | null; }
+export interface StreamCardInput { instruction: InstructionInput; branch?: { ancestorDigest: string | null; parentTitle: string; parentContent: string; }; documentText?: string | null; images?: VisionImage[]; }
 export async function streamCard(input: StreamCardInput) {
   const sections: string[] = [];
   if (input.documentText) sections.push(`# 文档内容\n${input.documentText}\n\n引用文档时请在对应陈述后保留 [[page:N]] 页码标记。`);
   if (input.branch) sections.push(buildBranchContext(input.branch.ancestorDigest, input.branch.parentTitle, input.branch.parentContent));
   sections.push(buildInstruction(input.instruction));
-  return streamWithProvider(SYSTEM_PROMPT, sections.join("\n\n"));
+  return streamWithProvider(SYSTEM_PROMPT, sections.join("\n\n"), input.images);
 }
 
 async function complete(system: string, user: string, maxTokens = 2000): Promise<string> {
