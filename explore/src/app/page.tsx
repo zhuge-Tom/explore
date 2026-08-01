@@ -30,7 +30,7 @@ export default async function HomePage() {
         </div>
         <Link href="/universe" className="universe-link">
           思维宇宙
-          <span className="star-count">{starCount} 颗恒星</span>
+          <span className="star-count">{starCount} ★</span>
         </Link>
       </div>
 
@@ -39,23 +39,27 @@ export default async function HomePage() {
 
       {usage.cards > 0 && (
         <p className="usage-dashboard">
-          今日 {usage.cards}/{usage.limit} 张卡片 · 输入 {fmt(usage.totalInput)} / 输出 {fmt(usage.output)} tokens · 缓存命中 {usage.cachePct}% · 约 ${usage.costUSD}
+          今日 {usage.cards}/{usage.limit} 张卡片 · 输入 {fmt(usage.totalInput)}{" "}
+          / 输出 {fmt(usage.output)} tokens · 缓存命中 {usage.cachePct}% · 约 $
+          {usage.costUSD}
         </p>
       )}
 
       {trees.length === 0 && (
         <div className="empty-guide">
-          <p>从一个问题开始</p>
-          <p>输入问题、添加图片，或导入 PDF 文献；Explore 会生成可继续展开、对比和追问的知识卡片。</p>
+          <p>👋 第一次来?试试这样开始:</p>
+          <p>1️⃣ 在上面输入一个你一直想弄懂的问题(或导入一篇 PDF 论文)</p>
+          <p>2️⃣ 卡片里看不懂的术语会高亮 —— 哪里不懂点哪里,知识树自己长出来</p>
+          <p>3️⃣ 弄懂一个概念后点「✍️ 总结」,通过 AI 评审就能点亮你的第一颗恒星 🌟</p>
         </div>
       )}
 
       <TreeList
-        initial={trees.map((tree) => ({
-          id: tree.id,
-          title: tree.title,
-          cardCount: tree._count.cards,
-          documentName: tree.document?.filename ?? null,
+        initial={trees.map((t) => ({
+          id: t.id,
+          title: t.title,
+          cardCount: t._count.cards,
+          documentName: t.document?.filename ?? null,
         }))}
       />
     </main>
