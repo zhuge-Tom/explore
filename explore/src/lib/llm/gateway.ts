@@ -16,23 +16,32 @@ function classify(e: unknown): ProviderError {
   return new ProviderError({ code: "server", message: message.slice(0, 180) || "模型服务异常" });
 }
 
+function isLocalEndpoint(baseUrl: string): boolean {
+  try {
+    return ["localhost", "127.0.0.1", "::1"].includes(new URL(baseUrl).hostname.toLowerCase());
+  } catch { return false; }
+}
+
 async function active(scope: CredentialScope = "text") {
   const settings = getSettings();
   const activeProvider = scope === "vision" ? settings.vision.activeProvider : settings.activeProvider;
   const config = (scope === "vision" ? settings.vision.providers : settings.providers)[activeProvider];
   const apiKey = await getApiKey(activeProvider, scope);
-  if (!apiKey) throw new ProviderError({ code: "not_configured", message: "尚未配置当前模型渠道的 API Key" });
+  if (!apiKey && !(config.kind === "openai-compatible" && isLocalEndpoint(config.baseUrl))) {
+    throw new ProviderError({ code: "not_configured", message: "尚未配置当前模型渠道的 API Key" });
+  }
   if (!config.model) throw new ProviderError({ code: "model_unavailable", message: "尚未选择模型" });
   return { config, apiKey };
 }
 
-function openAIClient(config: ProviderSettings, apiKey: string) {
-  return new OpenAI({ apiKey, baseURL: config.baseUrl.replace(/\/$/, ""), timeout: 30000, maxRetries: 0 });
+function openAIClient(config: ProviderSettings, apiKey: string | null) {
+  return new OpenAI({ apiKey: apiKey || "ollama", baseURL: config.baseUrl.replace(/\/$/, ""), timeout: 30000, maxRetries: 0 });
 }
 
 export async function listModels(input: { kind: ProviderKind; baseUrl: string; apiKey?: string; scope?: CredentialScope }): Promise<string[]> {
   const key = input.apiKey?.trim() || await getApiKey(input.kind, input.scope);
-  if (!key) throw new ProviderError({ code: "not_configured", message: "请先输入 API Key" });
+  const localCompatible = input.kind === "openai-compatible" && isLocalEndpoint(input.baseUrl);
+  if (!key && !localCompatible) throw new ProviderError({ code: "not_configured", message: "请先输入 API Key" });
   try {
     if (input.kind === "anthropic") {
       const response = await new Anthropic({ apiKey: key, baseURL: input.baseUrl || undefined, maxRetries: 0 }).models.list({ limit: 100 });

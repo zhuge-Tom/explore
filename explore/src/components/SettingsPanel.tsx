@@ -20,6 +20,15 @@ const LABELS: Record<ProviderKind, string> = {
   "openai-compatible": "自定义 OpenAI 兼容",
 };
 
+const VISION_PRESETS: Array<{ key: string; label: string; kind: ProviderKind; baseUrl: string; model: string }> = [
+  { key: "custom", label: "自定义 OpenAI 兼容视觉服务", kind: "openai-compatible", baseUrl: "", model: "" },
+  { key: "zhipu", label: "智谱 GLM-4V-Flash", kind: "openai-compatible", baseUrl: "https://open.bigmodel.cn/api/paas/v4", model: "glm-4v-flash" },
+  { key: "siliconflow", label: "SiliconFlow · Qwen2.5-VL", kind: "openai-compatible", baseUrl: "https://api.siliconflow.cn/v1", model: "Qwen/Qwen2.5-VL-32B-Instruct" },
+  { key: "ollama", label: "Ollama（本地，无需 API Key）", kind: "openai-compatible", baseUrl: "http://localhost:11434/v1", model: "qwen3-vl:8b" },
+  { key: "openai", label: "OpenAI · GPT-4o mini", kind: "openai-compatible", baseUrl: "https://api.openai.com/v1", model: "gpt-4o-mini" },
+  { key: "anthropic", label: "Anthropic Claude（原生视觉 API）", kind: "anthropic", baseUrl: "https://api.anthropic.com", model: "" },
+];
+
 export function SettingsPanel() {
   const [open, setOpen] = useState(false);
   const [view, setView] = useState<View | null>(null);
@@ -39,6 +48,7 @@ export function SettingsPanel() {
     () => mode === "vision" ? Boolean(view?.hasVisionApiKey[kind]) : Boolean(view?.hasApiKey[kind]),
     [kind, mode, view],
   );
+  const visionPreset = useMemo(() => VISION_PRESETS.find((preset) => preset.kind === kind && preset.baseUrl === baseUrl && (preset.key === "anthropic" || preset.model === model))?.key ?? "custom", [baseUrl, kind, model]);
 
   const load = useCallback(async () => {
     const response = await fetch("/api/settings", { cache: "no-store" });
@@ -117,6 +127,42 @@ export function SettingsPanel() {
     }
   }
 
+  async function loadModels() {
+    if (busy || !baseUrl.trim()) {
+      if (!baseUrl.trim()) setMessage({ ok: false, text: "请先填写 API 地址" });
+      return;
+    }
+    setBusy(true);
+    setMessage(null);
+    try {
+      const response = await fetch("/api/settings/test", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ kind, baseUrl: baseUrl.trim(), scope: mode, ...(apiKey.trim() ? { apiKey: apiKey.trim() } : {}) }),
+      });
+      const data = await response.json() as { ok: boolean; models?: string[]; error?: { message: string } };
+      if (!data.ok) throw new Error(data.error?.message || "无法加载模型列表");
+      const listed = data.models || [];
+      setModels(listed);
+      if (!model.trim() && listed.length) setModel(listed[0]);
+      setMessage({ ok: true, text: `已加载 ${listed.length} 个可用模型` });
+    } catch (error) {
+      setMessage({ ok: false, text: error instanceof Error ? error.message : "无法加载模型列表" });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function chooseVisionPreset(key: string) {
+    const preset = VISION_PRESETS.find((item) => item.key === key) ?? VISION_PRESETS[0];
+    setKind(preset.kind);
+    setBaseUrl(preset.baseUrl);
+    setModel(preset.model);
+    setModels([]);
+    setApiKey("");
+    setMessage(null);
+  }
+
   async function clearKey() {
     if (!keyExists || busy) return;
     setBusy(true);
@@ -141,11 +187,11 @@ export function SettingsPanel() {
       <section className="modal settings-modal" role="dialog" aria-modal="true" aria-labelledby="settings-title">
         <div className="modal-head"><h2 id="settings-title">模型与应用设置</h2><button className="modal-close" onClick={() => setOpen(false)}>×</button></div>
         <label className="settings-field"><span>配置模块</span><select value={mode} onChange={(event) => setMode(event.target.value as Mode)}><option value="text">文字对话</option><option value="vision">识图模型</option></select></label>
-        <label className="settings-field"><span>模型渠道</span><select value={kind} onChange={(event) => setKind(event.target.value as ProviderKind)}>{Object.entries(LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+        {mode === "vision" ? <label className="settings-field"><span>视觉服务</span><select value={visionPreset} onChange={(event) => chooseVisionPreset(event.target.value)}>{VISION_PRESETS.map((preset) => <option key={preset.key} value={preset.key}>{preset.label}</option>)}</select></label> : <label className="settings-field"><span>模型渠道</span><select value={kind} onChange={(event) => setKind(event.target.value as ProviderKind)}>{Object.entries(LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>}
         {mode === "vision" && <p className="settings-note">识图模型独立于文字对话配置。只有附图提问才会调用这里的模型与 Key。</p>}
         <label className="settings-field"><span>API 地址</span><input value={baseUrl} onChange={(event) => setBaseUrl(event.target.value)} placeholder="https://api.example.com/v1" /></label>
         <label className="settings-field"><span>API Key {keyExists && <><em className="settings-current">已安全保存</em><button type="button" className="clear-key" onClick={clearKey}>删除</button></>}</span><input type="password" value={apiKey} onChange={(event) => setApiKey(event.target.value)} placeholder={keyExists ? "留空则保持现有 Key" : "请输入 API Key"} autoComplete="off" /></label>
-        <label className="settings-field"><span>{mode === "vision" ? "视觉模型" : "模型"}</span><input list="provider-models" value={model} onChange={(event) => setModel(event.target.value)} placeholder="模型名称"/><datalist id="provider-models">{models.map((item) => <option key={item} value={item}/>)}</datalist></label>
+        <label className="settings-field"><span>{mode === "vision" ? "视觉模型" : "模型"}</span><div className="model-input-row"><input list="provider-models" value={model} onChange={(event) => setModel(event.target.value)} placeholder="模型名称"/><button type="button" className="settings-test" disabled={busy} onClick={loadModels}>加载模型</button></div><datalist id="provider-models">{models.map((item) => <option key={item} value={item}/>)}</datalist></label>
         {mode === "text" && <div className="settings-row"><label className="settings-field"><span>每日卡片上限</span><input type="number" min="1" value={daily} onChange={(event) => setDaily(event.target.value)}/></label><label className="settings-field"><span>最大并发</span><input type="number" min="1" max="10" value={concurrent} onChange={(event) => setConcurrent(event.target.value)}/></label></div>}
         {message && <p className={`settings-msg ${message.ok ? "ok" : "err"}`}>{message.text}</p>}
         <div className="modal-actions">{allowForce && <button className="settings-test" onClick={() => persist(false).then(() => setMessage({ ok: true, text: "已保存，可稍后测试" })).catch((error) => setMessage({ ok: false, text: error.message }))}>仍然保存</button>}<button className="primary" disabled={busy} onClick={saveAndTest}>{busy ? "正在验证…" : "保存并测试"}</button></div>
