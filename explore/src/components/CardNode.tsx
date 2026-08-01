@@ -177,25 +177,25 @@ function CardNodeInner({ data, selected }: NodeProps<CardFlowNode>) {
         {card.status === "done" && (
           <span className="actions nodrag">
             <button
-              className="action-btn"
+              className="action-btn action-primary"
               title="用自己的话总结,通过评审后进入思维宇宙"
               onClick={() => onSummarize(card.id)}
             >
-              ✍️ 总结
+              总结
             </button>
             <button
               className="action-btn"
               title="与另一个概念横向对比"
               onClick={() => onRelated(card.id)}
             >
-              ↔ 对比
+              对比
             </button>
             <button
               className="action-btn"
               title="继承上下文,换个角度追问"
               onClick={() => onBranch(card.id)}
             >
-              ⑂ 追问
+              追问
             </button>
             {childCount > 0 && (
               <button
@@ -203,7 +203,7 @@ function CardNodeInner({ data, selected }: NodeProps<CardFlowNode>) {
                 title={card.collapsed ? "展开子树" : "折叠子树"}
                 onClick={() => onToggleCollapse(card.id, !card.collapsed)}
               >
-                {card.collapsed ? `▸ +${hiddenDescendants}` : "▾ 折叠"}
+                {card.collapsed ? `展开 ${hiddenDescendants}` : "折叠"}
               </button>
             )}
             <button
@@ -211,14 +211,14 @@ function CardNodeInner({ data, selected }: NodeProps<CardFlowNode>) {
               title="重新生成本卡片(覆盖当前内容)"
               onClick={() => onRegenerate(card.id)}
             >
-              🔄
+              重写
             </button>
             <button className="action-btn" title="暂时隐藏这张卡片" onClick={() => onHide(card.id)}>
-              ◌ 隐藏
+              隐藏
             </button>
             {card.cardType === "root" ? (
               <button
-                className="action-btn del"
+                className="action-btn action-delete"
                 title="删除这个问题及其全部卡片"
                 onClick={onDeleteTree}
               >
@@ -226,11 +226,11 @@ function CardNodeInner({ data, selected }: NodeProps<CardFlowNode>) {
               </button>
             ) : (
               <button
-                className="action-btn del"
+                className="action-btn action-delete"
                 title="删除此卡片及其子树"
                 onClick={() => onDelete(card.id)}
               >
-                🗑
+                删除
               </button>
             )}
             {usage && (
