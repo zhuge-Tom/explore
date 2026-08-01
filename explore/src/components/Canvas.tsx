@@ -51,6 +51,23 @@ function layout(cards: CardDTO[]): Map<string, { x: number; y: number }> {
 type InputMode = { mode: "related" | "branch"; cardId: string };
 type Geometry = { x?: number; y?: number; width?: number; height?: number; hidden?: boolean };
 
+function canvasStars(treeId: string, count = 156) {
+  let seed = [...treeId].reduce((value, character) => ((value * 31) + character.charCodeAt(0)) >>> 0, 1729);
+  const random = () => {
+    seed = (seed * 1664525 + 1013904223) >>> 0;
+    return seed / 4294967296;
+  };
+  return Array.from({ length: count }, (_, index) => ({
+    id: index,
+    x: random() * 100,
+    y: random() * 100,
+    size: 0.7 + random() * 2.2,
+    opacity: 0.18 + random() * 0.65,
+    delay: -random() * 9,
+    duration: 2.6 + random() * 6.8,
+  }));
+}
+
 function CanvasInner({
   initialTree,
   onCiteClick,
@@ -72,6 +89,7 @@ function CanvasInner({
   const router = useRouter();
   const opened = useRef(new Set<string>());
   const { setCenter, fitView, zoomIn, zoomOut } = useReactFlow();
+  const backgroundStars = useMemo(() => canvasStars(initialTree.id), [initialTree.id]);
 
   const storageKey = `explore:canvas:${initialTree.id}`;
   useEffect(() => {
@@ -587,6 +605,22 @@ function CanvasInner({
 
   return (
     <>
+      <div className="canvas-starfield" aria-hidden="true">
+        {backgroundStars.map((star) => (
+          <span
+            key={star.id}
+            style={{
+              left: star.x + "%",
+              top: star.y + "%",
+              width: star.size,
+              height: star.size,
+              opacity: star.opacity,
+              animationDelay: star.delay + "s",
+              animationDuration: star.duration + "s",
+            }}
+          />
+        ))}
+      </div>
       <ReactFlow
         nodes={nodes}
         edges={edges}

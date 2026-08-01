@@ -199,13 +199,30 @@ button.primary:disabled {
 .canvas-wrap .react-flow,
 .workspace-canvas .react-flow {
   background-color: transparent;
-  background-image:
-    radial-gradient(circle, rgba(255,255,255,.82) 0 1px, transparent 1.3px),
-    radial-gradient(circle, rgba(142,182,255,.62) 0 1px, transparent 1.45px),
-    radial-gradient(circle, rgba(211,193,255,.42) 0 .8px, transparent 1.2px),
-    radial-gradient(ellipse at 52% 42%, rgba(44, 84, 164, .13), transparent 58%);
-  background-position: 0 0, 43px 71px, 108px 26px, center;
-  background-size: 89px 89px, 157px 157px, 233px 233px, 100% 100%;
+  background-image: radial-gradient(ellipse at 52% 42%, rgba(44, 84, 164, .13), transparent 58%);
+}
+.workspace-canvas > .react-flow {
+  z-index: 1;
+}
+.canvas-starfield {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.canvas-starfield span {
+  position: absolute;
+  display: block;
+  border-radius: 50%;
+  background: #dceaff;
+  box-shadow: 0 0 5px rgba(137, 180, 255, .68);
+  animation: canvasStarTwinkle 4.8s ease-in-out infinite;
+}
+@keyframes canvasStarTwinkle {
+  0%, 100% { transform: scale(.55); opacity: .12; }
+  42% { transform: scale(1.2); opacity: .9; }
+  55% { transform: scale(.72); opacity: .3; }
 }
 
 /* ---------- 卡片节点 ---------- */
@@ -715,7 +732,10 @@ button.primary:disabled {
   flex: 1;
   min-width: 0;
   position: relative;
-  background: #080b14;
+  background:
+    radial-gradient(ellipse 76% 60% at 10% 105%, rgba(46, 72, 154, .22), transparent 65%),
+    radial-gradient(ellipse 58% 52% at 92% -6%, rgba(107, 58, 151, .16), transparent 64%),
+    #070a12;
 }
 .pdf-title {
   font-size: 13px;
