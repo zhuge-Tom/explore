@@ -1,5 +1,5 @@
 import { cp, mkdir, rm } from "node:fs/promises";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import os from "node:os";
 import path from "node:path";
@@ -7,6 +7,7 @@ import path from "node:path";
 const builder = path.resolve("node_modules/electron-builder/out/cli/cli.js");
 const prepackaged = path.resolve("dist/win-unpacked");
 const nsisOutput = path.join(os.tmpdir(), "explore-nsis-build");
+const version = JSON.parse(readFileSync("package.json", "utf8")).version;
 
 function run(args) {
   const result = spawnSync(process.execPath, [builder, ...args], { stdio: "inherit" });
@@ -30,4 +31,4 @@ if (existsSync(prepackaged)) {
 await rm(nsisOutput, { recursive: true, force: true });
 await mkdir(nsisOutput, { recursive: true });
 run(["--win", "nsis", "--x64", "--prepackaged", prepackaged, "--config.directories.output", nsisOutput]);
-await cp(path.join(nsisOutput, "Explore Setup 0.1.0.exe"), path.resolve("dist/Explore Setup 0.1.0.exe"), { force: true });
+await cp(path.join(nsisOutput, `Explore Setup ${version}.exe`), path.resolve(`dist/Explore Setup ${version}.exe`), { force: true });
